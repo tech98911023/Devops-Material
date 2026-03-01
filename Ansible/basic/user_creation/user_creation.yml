@@ -1,0 +1,57 @@
+---
+- name: Create users with primary group, secondary groups, forced password change, and umask
+  hosts: developmentServer
+
+  vars:
+    users:
+      - user: govind
+        role: developer
+        secondary_groups: wheel
+        umask: 002
+      - user: rohit
+        role: admin
+        secondary_groups: wheel
+        umask: 022
+
+  tasks:
+    - name: Ensure primary groups exist
+      ansible.builtin.group:
+        name: "{{ item.role }}"
+        state: present
+      loop: "{{ users }}"
+
+  
+    - name: Create users with primary and secondary groups, force password change
+      ansible.builtin.user:
+        name: "{{ item.user }}"
+        group: "{{ item.role }}"                # Primary group
+        groups: "{{ item.secondary_groups }}"  # Secondary groups
+        shell: /bin/bash
+        password: "{{ 'student' | password_hash('sha512') }}"
+        state: present
+      loop: "{{ users }}"
+
+    - name: Configure group-based umask
+      ansible.builtin.copy:
+        dest: "/etc/profile.d/{{ item.role }}_umask.sh"
+        content: |
+          if groups $USER | grep -qw {{ item.role }}; then
+              umask {{ item.umask }}
+          fi
+        mode: '0644'
+      loop: "{{ users }}"
+      notify: Reload profile
+
+    - name: Get user details
+      ansible.builtin.command: id "{{ item.user }}"
+      register: user_output
+      loop: "{{ users }}"
+
+    - name: Show user details
+      ansible.builtin.debug:
+        var: user_output.results
+
+  handlers:
+    - name: Reload profile
+      ansible.builtin.shell: "source /etc/profile"
+      become: true
