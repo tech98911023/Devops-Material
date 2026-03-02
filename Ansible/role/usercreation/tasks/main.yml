@@ -1,0 +1,27 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for usercreation
+- name: Create groups
+  ansible.builtin.group:
+    name: "{{ item.group }}"
+    state: present
+  loop: "{{ users }}"
+
+- name: Create users
+  ansible.builtin.user:
+    name: "{{ item.1.name }}"
+    password: "{{ item.1.password | password_hash('sha512') }}"
+    group: "{{ item.0.group }}"
+    state: present
+  loop: "{{ users | subelements('members') }}"   
+  # The 'subelements' filter is used to iterate over the 'members' list within each group in the 'users' variable.
+  # when python interpret the loop would form a tuple of the group and the member, so item.0 would refer to the group and item.1 would refer to the member.
+- name: Set umask per group
+  ansible.builtin.template:
+    src: setumask.j2
+    dest: "/etc/profile.d/{{ item.group }}_umask.sh"
+    mode: '0644'
+  vars:
+    group_umask: "{{ item.umask }}"
+  loop: "{{ users }}"
+  notify: Reload profile

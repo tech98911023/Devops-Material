@@ -1,0 +1,6 @@
+---
+- name: create user and set umask
+  hosts: nodea
+  become: true
+  roles:
+    - usercreation

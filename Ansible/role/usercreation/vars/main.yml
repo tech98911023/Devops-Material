@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT-0
+---
+# vars file for usercreation
+
+users:
+  - group: developers
+    umask: "002"
+    members:
+      - name: dev1
+        password: password1
+      - name: dev2
+        password: password2
+
+  - group: admins
+    umask: "027"
+    members:
+      - name: admin1
+        password: adminpass
