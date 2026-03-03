@@ -1,0 +1,18 @@
+#SPDX-License-Identifier: MIT-0
+---
+# vars file for usercreationSecure
+
+users:
+  - group: developers
+    umask: "002"
+    members:
+      - name: dev3
+        password: "{{ dev_passwd }}"
+      - name: dev4
+        password: "{{ dev_passwd }}"
+
+  - group: admins
+    umask: "027"
+    members:
+      - name: admin2
+        password: "{{ prod_passwd }}"

@@ -1,0 +1,8 @@
+---
+- name: create user and set umask
+  hosts: nodea
+  # become: true
+  vars_files:
+    - usercreationSecure/defaults/secret.yml
+  roles:
+    - usercreationSecure
