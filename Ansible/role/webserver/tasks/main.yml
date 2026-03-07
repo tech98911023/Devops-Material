@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: MIT-0
+---
+# tasks file for webserver
+
+- name: Detection of OS
+  ansible.builtin.set_fact:
+    os_family: "{{ ansible_facts.os_family }}"
+
+- name: Set the webserver package name
+  ansible.builtin.set_fact:
+    webserver_package: "{{ 'httpd' if os_family == 'RedHat' else 'nginx' }}"
+
+- name: Install webserver package
+  ansible.builtin.package:
+    name: "{{ webserver_package }}"
+    state: present
+
+- name: Start the webserver service
+  ansible.builtin.service:
+    name: "{{ webserver_package }}"
+    state: started
+    enabled: true
+
+- name: Add firewall rule on RedHat based system
+  ansible.builtin.firewalld:
+    port: "{{ webserver_port }}"
+    permanent: true
+    state: enabled
+    immediate: true
+  when: os_family == "RedHat"
+
+- name: Install net-tools package for netstat command
+  ansible.builtin.package:
+    name: net-tools
+    state: present
+  when: os_family == "Debian"
+
+- name: Define rule in iptables
+  ansible.builtin.iptables:
+    chain: INPUT
+    protocol: tcp
+    destination_port: "{{ webserver_port }}"
+    jump: ACCEPT
+  when: os_family == "Debian"
+
+- name: Write index.html file
+  ansible.builtin.copy:
+    content: "<html><body><h1>Welcome to Ansible Webserver</h1></body></html>"
+    dest: "{{ webserver_root }}/index.html"
+
+- name: Restart webserver service
+  ansible.builtin.service:
+    name: "{{ webserver_package }}"
+    state: restarted
